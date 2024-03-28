@@ -1,40 +1,100 @@
-import './App.css';
-import React, { useState } from 'react'
-import AddUser from './Components/Users/AddUser';
-import UserList from './Components/Users/UserList';
+import React, { useState, useEffect } from 'react'
+import List from './Components/List'
+import './App.css'
 
-function App() {
-  const obj = localStorage.getItem("user")|| {};
-  console.log(obj);
-  const [usersList, setUsersList] = useState([obj]);
+
+const getData = () => {
+  const data = localStorage.getItem('datas')
+  if (data) {
+    return JSON.parse(data);
+  }
+  else {
+    return [];
+  }
+}
+
+const App = () => {
+  // datas array of object
+  const [datas, setdatas] = useState(getData());
+
+  // input field states
+  const [title, setTitle] = useState('');
+  const [password, setPassword] = useState('');
+  //const [toggleSubmit, setToggleSubmit] = useState(false);
+  const [editData, setEditData] = useState(null);
   
+  const [count,setCount]= useState(datas.length);
 
-  const addUserHandler = (uTitle, uPassword,) => {
-    setUsersList((prevUsersList) => {
-      return [
-        ...prevUsersList,
-        { title: uTitle, pass: uPassword, id: generateID() }
-        
-      ];
-    });
+  const submitHandler = (e) => {
+    e.preventDefault();
+    if (title ) {
+      setdatas(
+        datas.map((data) => {
+          if (data.id === editData) {
+            return { ...data, title: setTitle, password: setPassword }
+          }
+          return data;
+        })
+      )
+      //setToggleSubmit(true);
+      setTitle('')
+      setPassword('')
+      setEditData(null);
+    }
+
+
+    let val = {
+      id: Math.random().toString(),
+      title,
+      password
+    }
+    setdatas([...datas, val,])
+    setCount(count+1);
+    setTitle('');
+    setPassword('');
   }
 
-  function generateID() {
-    const timestamp = Date.now().toString(36);
-    const randomStr = Math.random().toString(36).substr(2, 5);
-    return timestamp + randomStr;
+  function handleDelete(id) {
+    const filteredDatas = datas.filter((Element) => {
+      return Element.id !== id;
+    })
+    setdatas(filteredDatas);
+    setCount(count-1);
   }
+
+  const handleEdit = (id) => {
+    const editDatas = datas.find((i) => i.id === id);
+    //setToggleSubmit(true);
+    setTitle(editDatas.title)
+    setPassword(editDatas.password)
+    setEditData(id);
+    handleDelete(id);
+  }
+
+  useEffect(() => {
+    localStorage.setItem('datas', JSON.stringify(datas));
+  }, [datas])
+
 
   return (
-    <div>
+    <div className='container'>
       <h1 className='title'>Password Keeper</h1>
-      <form className='search'>
-        <input type="text" placeholder="Search.." name="search"></input>
-      </form>
-      <AddUser onAddUser={addUserHandler} />
-      <UserList users={usersList} />
-    </div>
+      <p className='title'> count:-{count}</p>
+      
+      <div>
+        <form className='container' onSubmit={submitHandler}>
+          <label htmlFor="name">Title:-</label>
+          <input type="text" id="name" onChange={(e) => setTitle(e.target.value)} value={title} />
 
+          <label htmlFor="password">Password:-</label>
+          <input type="text" id="password" onChange={(e) => setPassword(e.target.value)} value={password} />&ensp;
+
+          <button type="submit">Submit</button>
+        </form>
+      </div>
+      <List datas={datas} handleDelete={handleDelete} handleEdit={handleEdit} />
+    </div>
   );
 }
+
 export default App;
